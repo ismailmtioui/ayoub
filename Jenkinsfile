@@ -1,43 +1,47 @@
+def gv
+
 pipeline {
     agent any
-
-    tools {
-        maven 'Maven 3.6.3' // Replace with the name of your Maven installation in Jenkins Global Tool Configuration
+    parameters {
+        choice(name: 'VERSION', choices: ['1.1.0', '1.2.0', '1.3.0'], description: '')
+        booleanParam(name: 'executeTests', defaultValue: true, description: '')
     }
-
     stages {
-        stage('Clean Workspace') {
-            steps {
-                // Clean the workspace directory
-                deleteDir()
-            }
-        }
-        stage('Checkout') {
-            steps {
-                // Checkout the Git repository
-                git 'https://github.com/simoks/java-maven.git'
-            }
-        }
-        stage('Build') {
+        stage("init") {
             steps {
                 script {
-                    // Navigate to the directory containing the Maven project
-                    dir('maven') {
-                        // Run Maven commands using the Maven tool configured in Jenkins
-                        sh "${tool 'Maven 3.6.3'}/bin/mvn clean test package"
-                    }
+                   gv = load "script.groovy" 
                 }
             }
         }
-        stage('Run JAR') {
+        stage("build") {
             steps {
                 script {
-                    // Run the generated JAR file
-                    sh "java -jar maven/target/maven-0.0.1-SNAPSHOT.jar"
+                    gv.buildApp()
                 }
             }
         }
-    }
+        stage("test") {
+            when {
+                expression {
+                    params.executeTests
+                }
+            }
+            steps {
+                script {
+                    gv.testApp()
+                }
+            }
+        }
+        stage("deploy") {
+            steps {
+                script {
+                    gv.deployApp()
+                }
+            }
+        }
+    }   
 }
+
 
 
