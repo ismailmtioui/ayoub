@@ -1,47 +1,37 @@
-def gv
-
 pipeline {
     agent any
-    parameters {
-        choice(name: 'VERSION', choices: ['1.1.0', '1.2.0', '1.3.0'], description: '')
-        booleanParam(name: 'executeTests', defaultValue: true, description: '')
-    }
+
     stages {
-        stage("init") {
+        stage('Checkout') {
             steps {
+                // clean the directory
+                sh "rm -rf *"
+                // Checkout the Git repository
+                sh "git clone https://github.com/simoks/java-maven.git"
+            }
+        }
+        stage('Build') {
+            steps {
+                // Here, we can can run Maven commands
                 script {
-                   gv = load "script.groovy" 
+                    
+                    def currentDir = pwd()
+                    echo "Current directory: ${currentDir}"
+                    
+                    // Navigate to the directory containing the Maven project
+                    dir('java-maven/maven') {
+                        // Run Maven commands
+                        sh 'mvn clean test package'
+                        sh "java -jar target/maven-0.0.1-SNAPSHOT.jar"
+                    }
+                    
+                   
                 }
             }
         }
-        stage("build") {
-            steps {
-                script {
-                    gv.buildApp()
-                }
-            }
-        }
-        stage("test") {
-            when {
-                expression {
-                    params.executeTests
-                }
-            }
-            steps {
-                script {
-                    gv.testApp()
-                }
-            }
-        }
-        stage("deploy") {
-            steps {
-                script {
-                    gv.deployApp()
-                }
-            }
-        }
-    }   
+    }
 }
+
 
 
 
