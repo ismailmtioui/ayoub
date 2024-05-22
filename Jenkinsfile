@@ -4,28 +4,56 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
-                // Clean the directory
-                sh "rm -rf *"
-                // Checkout the Git repository
-                sh "git clone https://github.com/simoks/java-maven.git"
+                script {
+                    // Clean the directory
+                    try {
+                        sh "rm -rf *"
+                    } catch (Exception e) {
+                        echo "Error cleaning directory: ${e}"
+                        currentBuild.result = 'FAILURE'
+                        error("Failed to clean the directory.")
+                    }
+
+                    // Checkout the Git repository
+                    try {
+                        sh "git clone https://github.com/simoks/java-maven.git"
+                    } catch (Exception e) {
+                        echo "Error cloning repository: ${e}"
+                        currentBuild.result = 'FAILURE'
+                        error("Failed to clone the repository.")
+                    }
+                }
             }
         }
         stage('Build') {
             steps {
-                // Run Maven commands within the specified directory
                 script {
                     def currentDir = pwd()
                     echo "Current directory: ${currentDir}"
                     
                     // Navigate to the directory containing the Maven project
                     dir('java-maven') {
-                        // Run Maven commands
-                        sh 'mvn clean test package'
-                        sh "java -jar target/maven-0.0.1-SNAPSHOT.jar"
+                        try {
+                            // Run Maven commands
+                            sh 'mvn clean test package'
+                        } catch (Exception e) {
+                            echo "Error running Maven commands: ${e}"
+                            currentBuild.result = 'FAILURE'
+                            error("Maven build failed.")
+                        }
+
+                        try {
+                            sh "java -jar target/maven-0.0.1-SNAPSHOT.jar"
+                        } catch (Exception e) {
+                            echo "Error running JAR file: ${e}"
+                            currentBuild.result = 'FAILURE'
+                            error("Failed to run the JAR file.")
+                        }
                     }
                 }
             }
         }
     }
 }
+
 
